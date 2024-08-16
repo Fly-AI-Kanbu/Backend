@@ -159,3 +159,27 @@ def get_recent_attendance_api(user_id: int, db: Session = Depends(get_db)):
 def get_voca_for_main(db: Session = Depends(get_db)):
     voca_pair = crud.get_random_voca_pair(db)
     return voca_pair
+
+
+# 퀴즈 API
+@app.get("/quiz", response_model=dict)
+def get_quiz(db: Session = Depends(get_db)):
+    # 전체 단어 중에서 무작위로 4개 선택
+    voca_pairs = db.query(models.VocaPair).order_by(func.random()).limit(4).all()
+
+    if len(voca_pairs) < 4:
+        raise HTTPException(status_code=404, detail="Not enough vocabulary pairs in the database.")
+
+    # 하나의 단어는 한국어로 표시, 나머지 3개는 영어로 표시
+    korean_word = random.choice(voca_pairs)
+    english_words = [voca.Eng for voca in voca_pairs]
+
+    # 퀴즈 응답 구조 정의
+    quiz = {
+        "voca_id": korean_word.voca_id,  # 한국어 단어의 voca_id
+        "korean": korean_word.Korean,  # 한국어 단어
+        "options": english_words,  # 영어 단어 선택지
+        "answer": korean_word.Eng  # 정답 (한국어 단어에 해당하는 영어 번역)
+    }
+
+    return quiz
