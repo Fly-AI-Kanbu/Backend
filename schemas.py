@@ -113,18 +113,18 @@ class ChatMessage(ChatMessageBase):
     class Config:
         from_attributes = True
 
-# LogQuiz 모델
-class LogQuizBase(BaseModel):
+# AnswerLog 모델
+class AnswerLogBase(BaseModel):
     log_id: str
     user_id: int
     word_id: int
     is_answer: bool
     date: datetime
 
-class LogQuizCreate(LogQuizBase):
+class AnswerLogCreate(AnswerLogBase):
     pass
 
-class LogQuiz(LogQuizBase):
+class AnswerLog(AnswerLogBase):
     class Config:
         from_attributes = True
 

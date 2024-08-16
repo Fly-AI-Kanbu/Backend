@@ -63,8 +63,8 @@ class ChatMessage(Base):
 
     chat = relationship("Chat")
 
-class LogQuiz(Base):
-    __tablename__ = 'log_quiz'
+class AnswerLog(Base):
+    __tablename__ = 'answer_log'
 
     log_id = Column(String(10), primary_key=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
@@ -96,7 +96,7 @@ class Country(Base):
 
     country_id = Column(Integer, primary_key=True, autoincrement=True)
     iso = Column(CHAR(2), nullable=True)
-    name = Column(String(20), nullable=True)
+    name = Column(String(30), nullable=True)
     nicename = Column(String(20), nullable=True)
     iso3 = Column(CHAR(3), nullable=True)
     numcode = Column(SmallInteger, nullable=True)
