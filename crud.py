@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 # from passlib.context import CryptContext  # 비밀번호 해시를 위한 패키지
 from typing import List
 import models, schemas
+import random
 
 
 # 비밀번호 해시 설정
@@ -250,6 +251,13 @@ def delete_quiz(db: Session, voca_id: int):
     return db_quiz
 
 
+###############################################################################################################
+#메인페이지 단어
+
+def get_random_voca_pair(db: Session):
+    voca_count = db.query(models.VocaPair).count()
+    random_id = random_id = random.randint(1, voca_count)
+    return db.query(models.VocaPair).filter(models.VocaPair.voca_id == random_id).first()
 ###############################################################################################################
 #subject DB
 def create_subject(db: Session, subject: schemas.SubjectCreate):

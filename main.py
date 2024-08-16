@@ -155,3 +155,7 @@ def get_recent_attendance_api(user_id: int, db: Session = Depends(get_db)):
     return attendances
 
 
+@app.get("/voca_pair", response_model=schemas.VocaPair)
+def get_voca_for_main(db: Session = Depends(get_db)):
+    voca_pair = crud.get_random_voca_pair(db)
+    return voca_pair
