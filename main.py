@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 import crud, schemas
 import models
 from typing import List
+from sqlalchemy import func
+import random
 from database import SessionLocal, engine
 
 # 데이터베이스 테이블 생성
