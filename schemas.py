@@ -73,6 +73,7 @@ class KoreanAbility(KoreanAbilityBase):
 
 # Chat 모델
 class ChatBase(BaseModel):
+    chat_id: str
     user_id: int
     subject_id: int
     created_time: datetime
@@ -81,8 +82,6 @@ class ChatCreate(ChatBase):
     pass
 
 class Chat(ChatBase):
-
-    chat_id: int
     class Config:
         from_attributes = True
 
