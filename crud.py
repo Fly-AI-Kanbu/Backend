@@ -211,29 +211,29 @@ def create_quiz(db: Session, voca: schemas.VocaPairCreate):
     return db_voca
 
 
-def create_logQuiz(db: Session, logQuiz: schemas.LogQuizCreate):
-    db_logQuiz = models.LogQuiz(
-        log_id=logQuiz.log_id,
-        user_id=logQuiz.user_id,
-        word_id=logQuiz.word_id,
-        is_answer=logQuiz.is_answer,
-        date=logQuiz.date
+def create_logAnswer(db: Session, AnswerLog: schemas.AnswerLogCreate):
+    db_AnswerLog = models.AnswerLog(
+        log_id=AnswerLog.log_id,
+        user_id=AnswerLog.user_id,
+        word_id=AnswerLog.word_id,
+        is_answer=AnswerLog.is_answer,
+        date=AnswerLog.date
     )
-    db.add(db_logQuiz)
+    db.add(db_AnswerLog)
     db.commit()
-    db.refresh(db_logQuiz)
-    return db_logQuiz
+    db.refresh(db_AnswerLog)
+    return db_AnswerLog
 
 
 def get_quiz(db: Session, voca_id: int):
     return db.query(models.VocaPair).filter(models.VocaPair.voca_id == voca_id).first()
 
 
-def get_logQuiz(db: Session, user_id: int):
-    return db.query(models.LogQuiz).filter(models.LogQuiz.user_id == user_id)
+def get_AnswerLog(db: Session, user_id: int):
+    return db.query(models.AnswerLog).filter(models.AnswerLog.user_id == user_id)
 
 
-def update_quiz(db: Session, voca_id: int, updated_voca: schemas.LogQuizCreate):
+def update_quiz(db: Session, voca_id: int, updated_voca: schemas.AnswerLogCreate):
     voca = db.query(models.VocaPair).filter(models.VocaPair.voca_id == voca_id).first()
     for key, value in updated_voca.model_dump().items():
         setattr(voca, key, value)
