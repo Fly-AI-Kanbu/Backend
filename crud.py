@@ -200,6 +200,7 @@ def delete_attendance(db: Session, user_id: int):
 #단어 DB(quiz)
 
 
+
 def create_quiz(db: Session, voca: schemas.VocaPairCreate):
     db_voca = models.VocaPair(
         Voca_id=voca.voca_id,
@@ -250,14 +251,12 @@ def delete_quiz(db: Session, voca_id: int):
         db.commit()
     return db_quiz
 
-
-###############################################################################################################
-#메인페이지 단어
-
+# 메인페이지 단어
 def get_random_voca_pair(db: Session):
     voca_count = db.query(models.VocaPair).count()
     random_id = random_id = random.randint(1, voca_count)
     return db.query(models.VocaPair).filter(models.VocaPair.voca_id == random_id).first()
+
 ###############################################################################################################
 #subject DB
 def create_subject(db: Session, subject: schemas.SubjectCreate):
