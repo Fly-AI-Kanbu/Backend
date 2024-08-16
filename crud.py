@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 # from passlib.context import CryptContext  # 비밀번호 해시를 위한 패키지
 from typing import List
-import models, schemas
 import random
+import models, schemas
 
 
 # 비밀번호 해시 설정
@@ -200,7 +200,6 @@ def delete_attendance(db: Session, user_id: int):
 #단어 DB(quiz)
 
 
-
 def create_quiz(db: Session, voca: schemas.VocaPairCreate):
     db_voca = models.VocaPair(
         Voca_id=voca.voca_id,
@@ -213,11 +212,11 @@ def create_quiz(db: Session, voca: schemas.VocaPairCreate):
     return db_voca
 
 
-def create_logAnswer(db: Session, AnswerLog: schemas.AnswerLogCreate):
+def create_AnswerLog(db: Session, AnswerLog: schemas.AnswerLogCreate):
     db_AnswerLog = models.AnswerLog(
         log_id=AnswerLog.log_id,
         user_id=AnswerLog.user_id,
-        word_id=AnswerLog.word_id,
+        voca_id=AnswerLog.voca_id,
         is_answer=AnswerLog.is_answer,
         date=AnswerLog.date
     )
@@ -257,6 +256,9 @@ def get_random_voca_pair(db: Session):
     random_id = random_id = random.randint(1, voca_count)
     return db.query(models.VocaPair).filter(models.VocaPair.voca_id == random_id).first()
 
+from sqlalchemy.orm import Session
+import models, schemas
+
 def create_or_ignore_answer_log(db: Session, answer_log: schemas.AnswerLogCreate):
     # 특정 user_id와 voca_id가 이미 존재하는지 확인
     existing_logs = db.query(models.AnswerLog).filter(
@@ -284,6 +286,7 @@ def create_or_ignore_answer_log(db: Session, answer_log: schemas.AnswerLogCreate
 
     # 2. 새로운 로그 추가
     return create_AnswerLog(db=db, AnswerLog=answer_log)
+
 
 ###############################################################################################################
 #subject DB
@@ -317,17 +320,17 @@ def delete_subject(db: Session, subject_id: int):
 
 ##############################################################################################################
 # 채팅 DB
-def create_chatInfo(db: Session, chat: schemas.ChatCreate):
-    db_chatInfo = models.Chat(
+def create_chat(db: Session, chat: schemas.ChatCreate):
+    db_chat = models.Chat(
         chat_id=chat.chat_id,
         user_id =chat.user_id,
         subject_id=chat.subject_id,
         created_time=chat.created_time
     )
-    db.add(db_chatInfo)
+    db.add(db_chat)
     db.commit()
-    db.refresh(db_chatInfo)
-    return db_chatInfo
+    db.refresh(db_chat)
+    return db_chat
 
 
 def create_chatMessage(db: Session, chatMessage: schemas.ChatMessageCreate):

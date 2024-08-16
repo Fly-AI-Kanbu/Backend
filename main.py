@@ -5,8 +5,8 @@ import models
 from typing import List
 from sqlalchemy import func
 import random
-from database import SessionLocal, engine
 import datetime
+from database import SessionLocal, engine
 
 # 데이터베이스 테이블 생성
 models.Base.metadata.create_all(bind=engine)
@@ -157,6 +157,8 @@ def get_recent_attendance_api(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Attendance not found")
     return attendances
 
+###########################################################################################
+#단어관련
 
 @app.get("/voca_pair", response_model=schemas.VocaPair)
 def get_voca_for_main(db: Session = Depends(get_db)):
@@ -200,7 +202,7 @@ def create_or_ignore_answer_log_api(answer_log: schemas.AnswerLogCreate, db: Ses
 ##############################################################################################################
 
 @app.post("/chatrooms/")
-def create_chat_room(user_id: int, subject_id: int, db: Session = Depends(get_db)):
+def create_chat_room(chat_id: int, user_id: int, subject_id: int, db: Session = Depends(get_db)):
     # User와 Subject 존재 여부 확인
     user = db.query(models.User).filter(models.User.user_id == user_id).first()
     subject = db.query(models.Subject).filter(models.Subject.subject_id == subject_id).first()
@@ -212,14 +214,14 @@ def create_chat_room(user_id: int, subject_id: int, db: Session = Depends(get_db
     
     # 채팅방 생성
     new_chat_room = models.Chat(
-        chat_id=str(50),
+        chat_id=chat_id,
         user_id=user_id,
         subject_id=subject_id,
         created_time=datetime.datetime.now()
     )
-    
+
     db.add(new_chat_room)
     db.commit()
     db.refresh(new_chat_room)
-    
+
     return new_chat_room

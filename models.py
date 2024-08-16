@@ -1,7 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, Text, DateTime, Date, SmallInteger, BigInteger, CHAR
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-import datetime
 
 Base = declarative_base()
 
@@ -46,8 +45,8 @@ class KoreanAbility(Base):
 class Chat(Base):
     __tablename__ = 'chat'
 
-    chat_id = Column(String(50), primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
+    chat_id = Column(Integer, primary_key=True, autoincrement = True)
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False, default=1)
     subject_id = Column(Integer, ForeignKey('subject.subject_id'), nullable=False)
     created_time = Column(DateTime, nullable=False)
 
@@ -73,11 +72,11 @@ class ChatMessage(Base):
 
     chat = relationship("Chat", back_populates="messages")
 class AnswerLog(Base):
-    __tablename__ = 'log_quiz'
+    __tablename__ = 'answer_log'
 
     log_id = Column(String(10), primary_key=True)
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
-    word_id = Column(Integer, nullable=False)
+    voca_id = Column(Integer, nullable=False)
     is_answer = Column(Boolean, nullable=False)
     date = Column(DateTime, nullable=False)
 

@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, date
-from models import User, Country, Subscribe, KoreanAbility, VocaPair, ChatMessage, Chat, Subject, Attendance, AccessToken, SubscribeLog  # Adjust this import according to your file structure
+from models import User, Country, Subscribe, KoreanAbility, VocaPair, ChatMessage, Chat, Subject, Attendance, AccessToken, SubscribeLog, AnswerLog   # Adjust this import according to your file structure
 
 # 데이터베이스 연결 설정
 DATABASE_URL = "mysql+pymysql://root:jth306241!@localhost/kanbu"  # 사용자의 MySQL 설정에 맞게 수정
@@ -15,7 +15,7 @@ session = Session()
 country1 = Country(name='South Korea', nicename='Korea', iso='KR', iso3='KOR', numcode=410, phonecode=82)
 country2 = Country(name='United States', nicename='USA', iso='US', iso3='USA', numcode=840, phonecode=1)
 session.add_all([country1, country2])
-session.commit()W
+session.commit()
 
 # User 데이터
 user1 = User(name='John', pwd='password123', first_name='John', last_name='Doe', age=30, nickname='Johnny', email='john.doe@example.com', phone='010-1234-5678', address='Seoul, South Korea', country_id=country1.country_id)
@@ -49,7 +49,7 @@ voca_pair4 = VocaPair(Korean='벌레', Eng='bug')
 voca_pair5 = VocaPair(Korean='책', Eng='book')
 voca_pair6 = VocaPair(Korean='컴퓨터', Eng='컴퓨터가 영어임')
 
-session.add_all([voca_pair3, voca_pair4, voca_pair5, voca_pair6])
+session.add_all([voca_pair1, voca_pair2, voca_pair3, voca_pair4, voca_pair5, voca_pair6])
 session.commit()
 
 # ChatMessage 데이터
@@ -59,8 +59,8 @@ session.add_all([chat_message1, chat_message2])
 session.commit()
 
 # LogQuiz 데이터
-log_quiz1 = LogQuiz(log_id='log123', user_id=user1.user_id, word_id=voca_pair1.voca_id, is_answer=True, date=datetime.now())
-log_quiz2 = LogQuiz(log_id='log456', user_id=user2.user_id, word_id=voca_pair2.voca_id, is_answer=False, date=datetime.now())
+log_quiz1 = AnswerLog(log_id='log123', user_id=user1.user_id, voca_id=voca_pair1.voca_id, is_answer=True, date=datetime.now())
+log_quiz2 = AnswerLog(log_id='log456', user_id=user2.user_id, voca_id=voca_pair2.voca_id, is_answer=False, date=datetime.now())
 session.add_all([log_quiz1, log_quiz2])
 session.commit()
 
@@ -77,8 +77,8 @@ session.add_all([subscribe1, subscribe2])
 session.commit()
 
 # AccessToken 데이터
-access_token1 = AccessToken(Key=1, user_id=user1.user_id, access_token='token123', expiration_date=datetime.now())
-access_token2 = AccessToken(Key=2, user_id=user2.user_id, access_token='token456', expiration_date=datetime.now())
+access_token1 = AccessToken(key=1, user_id=user1.user_id, access_token='token123', expiration_date=datetime.now())
+access_token2 = AccessToken(key=2, user_id=user2.user_id, access_token='token456', expiration_date=datetime.now())
 session.add_all([access_token1, access_token2])
 session.commit()
 
