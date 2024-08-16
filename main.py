@@ -202,7 +202,7 @@ def create_or_ignore_answer_log_api(answer_log: schemas.AnswerLogCreate, db: Ses
 ##############################################################################################################
 
 @app.post("/chatrooms/")
-def create_chat_room(chat_id: int, user_id: int, subject_id: int, db: Session = Depends(get_db)):
+def create_chat_room(user_id: int, subject_id: int, db: Session = Depends(get_db)):
     # User와 Subject 존재 여부 확인
     user = db.query(models.User).filter(models.User.user_id == user_id).first()
     subject = db.query(models.Subject).filter(models.Subject.subject_id == subject_id).first()
@@ -211,10 +211,10 @@ def create_chat_room(chat_id: int, user_id: int, subject_id: int, db: Session = 
         raise HTTPException(status_code=404, detail="User not found")
     if not subject:
         raise HTTPException(status_code=404, detail="Subject not found")
-    
+
     # 채팅방 생성
     new_chat_room = models.Chat(
-        chat_id=chat_id,
+        chat_id=str(50),
         user_id=user_id,
         subject_id=subject_id,
         created_time=datetime.datetime.now()
