@@ -187,6 +187,18 @@ def get_quiz(db: Session = Depends(get_db)):
 
     return quiz
 
+
+@app.post("/quiz/log", response_model=schemas.AnswerLog)
+def create_or_ignore_answer_log_api(answer_log: schemas.AnswerLogCreate, db: Session = Depends(get_db)):
+    # 로그를 생성하거나 이미 존재하는 로그를 반환
+    log = crud.create_or_ignore_answer_log(db=db, answer_log=answer_log)
+
+    # 생성된 로그 또는 기존 로그 반환
+    return log
+
+
+##############################################################################################################
+
 @app.post("/chatrooms/")
 def create_chat_room(user_id: int, subject_id: int, db: Session = Depends(get_db)):
     # User와 Subject 존재 여부 확인
