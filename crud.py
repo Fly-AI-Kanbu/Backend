@@ -320,17 +320,17 @@ def delete_subject(db: Session, subject_id: int):
 
 ##############################################################################################################
 # 채팅 DB
-def create_chat(db: Session, chat: schemas.ChatCreate):
-    db_chat = models.Chat(
+def create_chatInfo(db: Session, chat: schemas.ChatCreate):
+    db_chatInfo = models.Chat(
         chat_id=chat.chat_id,
         user_id =chat.user_id,
         subject_id=chat.subject_id,
         created_time=chat.created_time
     )
-    db.add(db_chat)
+    db.add(db_chatInfo)
     db.commit()
-    db.refresh(db_chat)
-    return db_chat
+    db.refresh(db_chatInfo)
+    return db_chatInfo
 
 
 def create_chatMessage(db: Session, chatMessage: schemas.ChatMessageCreate):
