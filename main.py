@@ -6,6 +6,7 @@ from typing import List
 from sqlalchemy import func
 import random
 from database import SessionLocal, engine
+import datetime
 
 # 데이터베이스 테이블 생성
 models.Base.metadata.create_all(bind=engine)
@@ -185,3 +186,28 @@ def get_quiz(db: Session = Depends(get_db)):
     }
 
     return quiz
+
+@app.post("/chatrooms/")
+def create_chat_room(user_id: int, subject_id: int, db: Session = Depends(get_db)):
+    # User와 Subject 존재 여부 확인
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+    subject = db.query(models.Subject).filter(models.Subject.subject_id == subject_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found")
+    
+    # 채팅방 생성
+    new_chat_room = models.Chat(
+        chat_id=str(50),
+        user_id=user_id,
+        subject_id=subject_id,
+        created_time=datetime.datetime.now()
+    )
+    
+    db.add(new_chat_room)
+    db.commit()
+    db.refresh(new_chat_room)
+    
+    return new_chat_room

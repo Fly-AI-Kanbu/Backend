@@ -1,6 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, Text, DateTime, Date, SmallInteger, BigInteger, CHAR
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+import datetime
 
 Base = declarative_base()
 
@@ -46,7 +47,7 @@ class Chat(Base):
     __tablename__ = 'chat'
 
     chat_id = Column(String(50), primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False, default=1)
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
     subject_id = Column(Integer, ForeignKey('subject.subject_id'), nullable=False)
     created_time = Column(DateTime, nullable=False)
 
