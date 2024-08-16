@@ -257,6 +257,34 @@ def get_random_voca_pair(db: Session):
     random_id = random_id = random.randint(1, voca_count)
     return db.query(models.VocaPair).filter(models.VocaPair.voca_id == random_id).first()
 
+def create_or_ignore_answer_log(db: Session, answer_log: schemas.AnswerLogCreate):
+    # 특정 user_id와 voca_id가 이미 존재하는지 확인
+    existing_logs = db.query(models.AnswerLog).filter(
+        models.AnswerLog.user_id == answer_log.user_id,
+        models.AnswerLog.voca_id == answer_log.voca_id
+    ).all()
+
+    # is_answer가 False일 때: 바로 로그를 저장
+    if not answer_log.is_answer:
+        return create_AnswerLog(db=db, AnswerLog=answer_log)
+
+    # is_answer가 True일 때:
+    # 1. 기존에 is_answer가 True인 로그가 없는 경우에만 vocabulary에 1점 추가
+    is_answer_correct_logged = any(log.is_answer for log in existing_logs)
+    if not is_answer_correct_logged:
+        # KoreanAbility 업데이트 (vocabulary에 1점 추가)
+        korean_ability = db.query(models.KoreanAbility).filter(
+            models.KoreanAbility.user_id == answer_log.user_id
+        ).first()
+
+        if korean_ability:
+            korean_ability.vocabulary += 1
+            db.commit()
+            db.refresh(korean_ability)
+
+    # 2. 새로운 로그 추가
+    return create_AnswerLog(db=db, AnswerLog=answer_log)
+
 ###############################################################################################################
 #subject DB
 def create_subject(db: Session, subject: schemas.SubjectCreate):
