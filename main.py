@@ -7,6 +7,8 @@ from sqlalchemy import func
 import random
 import datetime
 from database import SessionLocal, engine
+from uuid import uuid4
+
 
 # 데이터베이스 테이블 생성
 models.Base.metadata.create_all(bind=engine)
@@ -225,3 +227,26 @@ def create_chat_room(user_id: int, subject_id: int, db: Session = Depends(get_db
     db.refresh(new_chat_room)
 
     return new_chat_room
+
+@app.post("/chatrooms/chatmessages")
+async def create_message(chat_msg : schemas.ChatMessageCreate, db : Session = Depends(get_db)):
+    msg_id = str(uuid4())
+    chatroom = db.query(models.Chat).filter(models.Chat.chat_id == chat_msg.chat_id).first()
+    created_time = datetime.datetime.now()
+
+    if not chatroom:
+        raise HTTPException(status_code=404, detail="Chatroom not found")
+    
+    new_chat_msg = models.ChatMessage(
+        msg_id=msg_id,
+        chat_id=chat_msg.chat_id,
+        content=chat_msg.content,
+        created_time=created_time,
+        is_human=chat_msg.is_human  # bool 값을 할당
+    )
+
+    db.add(new_chat_msg)
+    db.commit()
+    db.refresh(new_chat_msg)
+
+    return new_chat_msg
