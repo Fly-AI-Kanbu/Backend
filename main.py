@@ -228,7 +228,7 @@ def create_chat_room(user_id: int, subject_id: int, db: Session = Depends(get_db
 
     return new_chat_room
 
-@app.post("/chatrooms/chatmessages")
+@app.post("/chatrooms/chatmessages/")
 async def create_message(chat_msg : schemas.ChatMessageCreate, db : Session = Depends(get_db)):
     msg_id = str(uuid4())
     chatroom = db.query(models.Chat).filter(models.Chat.chat_id == chat_msg.chat_id).first()
@@ -250,3 +250,10 @@ async def create_message(chat_msg : schemas.ChatMessageCreate, db : Session = De
     db.refresh(new_chat_msg)
 
     return new_chat_msg
+
+
+@app.get("/chats/{user_id}", response_model = List[schemas.Chat])
+async def get_chat(user_id: int, db : Session = Depends(get_db)):
+    chats = crud.get_chat(db, user_id = user_id)
+    return chats
+

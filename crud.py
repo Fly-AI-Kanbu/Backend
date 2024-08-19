@@ -320,7 +320,7 @@ def delete_subject(db: Session, subject_id: int):
 
 ##############################################################################################################
 # 채팅 DB
-def create_chatInfo(db: Session, chat: schemas.ChatCreate):
+def create_ (db: Session, chat: schemas.ChatCreate):
     db_chatInfo = models.Chat(
         chat_id=chat.chat_id,
         user_id =chat.user_id,
@@ -348,8 +348,8 @@ def create_chatMessage(db: Session, chatMessage: schemas.ChatMessageCreate):
 
 
 #채팅방 정보
-def get_chatInfo(db: Session, chat_id: int):
-    return db.query(models.Chat).filter(models.Chat.chat_id == chat_id).first()
+def get_chat(db: Session, user_id: int):
+    return db.query(models.Chat).filter(models.Chat.user_id == user_id).all()
 
 
 #채팅방 별 로그 정보
