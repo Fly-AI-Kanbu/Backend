@@ -1,11 +1,12 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from . import config
 
-user = 'root'
-password = "jth306241!"
-ip = '127.0.0.1'
-db_name = "Kanbu"
+user = config.mysql_user
+password = config.mysql_password
+ip = config.mysql_ip
+db_name = config.mysql_db
 # MySQL 연결 설정
 SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{user}:{password}@{ip}/{db_name}"
 

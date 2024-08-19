@@ -26,6 +26,7 @@ class User(Base):
     chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")
     subscribe_logs = relationship("SubscribeLog", back_populates="user", cascade="all, delete-orphan")
     log_quizzes = relationship("AnswerLog", back_populates="user", cascade="all, delete-orphan")
+    consecutive_attendances = relationship("ConsecutiveAttendance", back_populates="user", cascade="all, delete-orphan")
 
 
 
@@ -96,6 +97,16 @@ class Attendance(Base):
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
     attendance_date = Column(DateTime, nullable=False)
     user = relationship("User", back_populates="attendances")
+
+class ConsecutiveAttendance(Base):
+    __tablename__ = 'consecutive_attendance'
+
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False, primary_key=True)
+    last_attendance_date = Column(Date, nullable=False)
+    consecutive_days = Column(Integer, nullable = False, default = 1)
+
+    user = relationship("User", back_populates="consecutive_attendances")
+    
 class Country(Base):
     __tablename__ = 'country'
 
