@@ -154,6 +154,19 @@ class Attendance(AttendanceBase):
     class Config:
         from_attributes = True
 
+# Consecutive_Attendance 모델
+class ConsecutiveAttendanceBase(BaseModel):
+    user_id: int
+    last_attendance_date: datetime
+    Consecutive_days: int = 1
+
+class ConsecutiveAttendanceCreate(ConsecutiveAttendanceBase):
+    pass
+
+class ConsecutiveAttendance(ConsecutiveAttendanceBase):
+    class Config:
+        from_attributes = True
+
 # AccessToken 모델
 class AccessTokenBase(BaseModel):
     Key: int

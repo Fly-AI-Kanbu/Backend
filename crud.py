@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import random
 import models, schemas
+from datetime import timedelta
 
 
 # 비밀번호 해시 설정
@@ -195,7 +196,34 @@ def delete_attendance(db: Session, user_id: int):
         db.commit()
     return db_attend
 
+# 누적 출석 업데이트
+def get_consecutive_attendance(db: Session, user_id: int):
+    return db.query(models.ConsecutiveAttendance).filter(models.ConsecutiveAttendance.user_id == user_id).first()
 
+def update_consecutive_attendance(db: Session, attendance_data: schemas.ConsecutiveAttendanceCreate):
+    db_attendance = get_consecutive_attendance(db, attendance_data.user_id)
+    
+    if db_attendance:
+        # 연속 출석 여부를 판단
+        if db_attendance.last_attendance_date == (attendance_data.last_attendance_date - timedelta(days=1)).date():
+            db_attendance.consecutive_days += 1
+        elif db_attendance.last_attendance_date == attendance_data.last_attendance_date.date():
+            pass
+        else:
+            db_attendance.consecutive_days = 1
+        
+        db_attendance.last_attendance_date = attendance_data.last_attendance_date
+        db.commit()
+        db.refresh(db_attendance)
+    else:
+        # 새로운 출석 기록 생성
+        new_attendance = models.ConsecutiveAttendance(**attendance_data.dict())
+        db.add(new_attendance)
+        db.commit()
+        db.refresh(new_attendance)
+        db_attendance = new_attendance
+    
+    return db_attendance
 ##################################################################################################
 #단어 DB(quiz)
 

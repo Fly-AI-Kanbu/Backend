@@ -42,6 +42,11 @@ def create_user_with_details(user: schemas.UserCreate, db: Session = Depends(get
 
     return db_user
 
+# 연속 출석 기록 조회 엔드포인트
+@app.put("/consecutive_attendance/", response_model=schemas.ConsecutiveAttendance)
+async def update_attendance(attendance_data: schemas.ConsecutiveAttendanceCreate, db: Session = Depends(get_db)):
+    db_attendance = crud.update_consecutive_attendance(db, attendance_data)
+    return db_attendance
 
 # 모든 사용자 조회 엔드포인트
 @app.get("/users/", response_model=list[schemas.User])
@@ -256,4 +261,3 @@ async def create_message(chat_msg : schemas.ChatMessageCreate, db : Session = De
 async def get_chat(user_id: int, db : Session = Depends(get_db)):
     chats = crud.get_chat(db, user_id = user_id)
     return chats
-
