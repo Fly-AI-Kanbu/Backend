@@ -250,12 +250,12 @@ async def create_message(chat_msg : schemas.ChatMessageCreate, db : Session = De
         is_human=chat_msg.is_human  # bool 값을 할당
     )
 
+
     db.add(new_chat_msg)
     db.commit()
     db.refresh(new_chat_msg)
 
     return new_chat_msg
-
 
 @app.get("/chats/{user_id}", response_model = List[schemas.Chat])
 async def get_chat(user_id: int, db : Session = Depends(get_db)):
