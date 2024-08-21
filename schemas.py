@@ -40,6 +40,21 @@ class CountryCreate(CountryBase):
 class Country(CountryBase):
     class Config:
         from_attributes = True
+class CountryImageBase(BaseModel):
+    country_id: int
+    country_img: bytes
+    img_type: str
+
+class CountryImageCreate(CountryImageBase):
+    pass
+
+class CountryImage(CountryImageBase):
+    class Config:
+        from_attributes = True
+
+class CountryWithImage(BaseModel):
+    country: Country
+    country_img: CountryImage
 
 # Subscribe 모델
 class SubscribeBase(BaseModel):

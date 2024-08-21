@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 import crud, schemas
 import models
@@ -135,6 +136,14 @@ def get_country_api(country_id: int, db: Session = Depends(get_db)):
     if not country:
         raise HTTPException(status_code=404, detail="Country not found")
     return country
+
+@app.get("/countries/{country_id}/image", response_model=schemas.CountryImage)
+async def get_country_image_api(country_id: int, db: Session = Depends(get_db)):
+    country_image = crud.get_country_image(db=db, country_id=country_id)
+    if not country_image:
+        raise HTTPException(status_code=404, detail="CountryImage not found")
+    return Response(content=country_image.country_img, media_type="image/" + country_image.img_type)
+
 
 @app.get("/countries/", response_model=list[schemas.Country])
 def get_countries_api(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):

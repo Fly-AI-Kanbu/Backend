@@ -123,6 +123,9 @@ def create_country(db: Session, country: schemas.CountryCreate):
 def get_country(db: Session, country_id: int):
     return db.query(models.Country).filter(models.Country.country_id == country_id).first()
 
+def get_country_image(db: Session, country_id: int):
+    return db.query(models.CountryImage).filter(models.CountryImage.country_id == country_id).first()
+
 
 def update_country(db: Session, country_id: int, updated_country: schemas.CountryBase):
     db_country = db.query(models.Country).filter(models.Country.country_id == country_id).first()

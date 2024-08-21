@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, Text, DateTime, Date, SmallInteger, BigInteger, CHAR
+from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, Text, DateTime, Date, SmallInteger, BigInteger, CHAR, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -119,6 +119,16 @@ class Country(Base):
     phonecode = Column(Integer, nullable=True)
 
     users = relationship("User", back_populates="country")
+    images = relationship("CountryImage", back_populates="country", cascade="all, delete-orphan")
+
+class CountryImage(Base):
+    __tablename__ = 'country_img'
+
+    country_id = Column(Integer, ForeignKey('country.country_id', ondelete = "CASCADE"), primary_key=True)
+    country_img = Column(LargeBinary(length = (2 ** 32) - 1), nullable = False)
+    img_type = Column(CHAR(4), nullable = False)
+
+    country = relationship("Country", back_populates="images")
 
 class Subscribe(Base):
     __tablename__ = 'subscribe'
