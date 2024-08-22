@@ -2,9 +2,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, date
 from models import User, Country, Subscribe, KoreanAbility, VocaPair, ChatMessage, Chat, Subject, Attendance, AccessToken, SubscribeLog, AnswerLog   # Adjust this import according to your file structure
+import config
 
-# 데이터베이스 연결 설정
-DATABASE_URL = "mysql+pymysql://root:jth306241!@localhost/kanbu"  # 사용자의 MySQL 설정에 맞게 수정
+user = config.mysql_user
+password = config.mysql_password
+ip = config.mysql_ip
+db_name = config.mysql_db
+# MySQL 연결 설정
+DATABASE_URL = f"mysql+pymysql://{user}:{password}@{ip}/{db_name}"
 
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)

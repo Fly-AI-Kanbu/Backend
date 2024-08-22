@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from sqlalchemy.orm import Session
 import crud, schemas
 import models
@@ -9,7 +9,7 @@ import random
 import datetime
 from database import SessionLocal, engine
 from uuid import uuid4
-
+import io
 
 # 데이터베이스 테이블 생성
 models.Base.metadata.create_all(bind=engine)
@@ -24,6 +24,11 @@ def get_db():
     finally:
         db.close()
 
+
+# 로컬 호스트 접속 초기 화면
+@app.get("/")
+def show_me_the_money():
+    return "깐부자나~"
 # 사용자 생성 엔드포인트
 @app.post("/users/", response_model=schemas.User)
 def create_user_with_details(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -270,3 +275,30 @@ async def create_message(chat_msg : schemas.ChatMessageCreate, db : Session = De
 async def get_chat(user_id: int, db : Session = Depends(get_db)):
     chats = crud.get_chat(db, user_id = user_id)
     return chats
+
+
+###############################################################
+
+# Dialogue
+@app.get("/dialogues/{dialogue_id}/{sequence}/video")
+def get_dialogue_video(dialogue_id: int, sequence: int, db: Session = Depends(get_db)):
+    dialogue_video = crud.get_dialogues_video(db=db, dialogue_id=dialogue_id, sequence=sequence)
+    if not dialogue_video:
+        raise HTTPException(status_code=404, detail="Video not found")
+
+    # 비디오 데이터를 바이트 스트림으로 변환
+    video_stream = io.BytesIO(dialogue_video.video_data)
+
+    # StreamingResponse를 사용하여 비디오 데이터를 반환
+    return StreamingResponse(
+        video_stream,
+        media_type=f"video/{dialogue_video.video_type}",
+        headers={"Content-Disposition": f"inline; filename=video.{dialogue_video.video_type}"}
+    )
+
+@app.get("/dialogues/{dialogue_id}/{sequence}/script")
+def get_dialogue_script(dialogue_id: int, sequence: int, db: Session = Depends(get_db)):
+    dialogue_script = crud.get_dialogues_script(db=db, dialogue_id=dialogue_id, sequence=sequence)
+    if not dialogue_script:
+        raise HTTPException(status_code=404, detail="Script not found")
+    return dialogue_script

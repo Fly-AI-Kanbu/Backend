@@ -1,6 +1,28 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, Text, DateTime, Date, SmallInteger, BigInteger, CHAR, LargeBinary
+from sqlalchemy import Column, ForeignKey, Integer, String, Boolean, Text, DateTime, Date, SmallInteger, BigInteger, CHAR
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import TypeDecorator, LargeBinary
+from sqlalchemy import BLOB
+
+class LongBlob(TypeDecorator):
+    impl = BLOB
+    cache_ok = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.length = (2 ** 32) - 1  # LONGBLOB의 최대 크기
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'mysql':
+            return dialect.type_descriptor(LargeBinary(self.length))
+        else:
+            return dialect.type_descriptor(BLOB(self.length))
+
+    def process_bind_param(self, value, dialect):
+        return value
+
+    def process_result_value(self, value, dialect):
+        return value
 
 Base = declarative_base()
 
@@ -159,3 +181,36 @@ class SubscribeLog(Base):
 
     user = relationship("User")
     subscribe = relationship("Subscribe")
+
+class Dialogue(Base):
+    __tablename__ = 'dialogue'
+
+    dialogue_id = Column(Integer, primary_key=True)
+    title = Column(String(20), nullable=False)
+
+    scripts = relationship("DialogueScript", back_populates="dialogue")
+    videos = relationship("DialogueVideo", back_populates="dialogue")
+
+
+class DialogueScript(Base):
+    __tablename__ = 'dialogue_script'
+
+    script_id = Column(String(64), primary_key=True)  # String(64)는 고유한 식별자로 사용되는 경우 적절
+    dialogue_id = Column(Integer, ForeignKey('dialogue.dialogue_id'), nullable=False)
+    sequence = Column(Integer, nullable=False)
+    script_ai = Column(String(64), nullable=False)
+    script_user = Column(String(64), nullable=False)
+
+    dialogue = relationship("Dialogue", back_populates="scripts")
+
+
+class DialogueVideo(Base):
+    __tablename__ = "dialogue_video"
+
+    video_id = Column(String(64), primary_key=True)
+    dialogue_id = Column(Integer, ForeignKey('dialogue.dialogue_id'), nullable=False)
+    sequence = Column(Integer, nullable=False)
+    video_data = Column(LongBlob, nullable=False) 
+    video_type = Column(String(4), nullable=False)  
+
+    dialogue = relationship("Dialogue", back_populates="videos")

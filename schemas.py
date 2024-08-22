@@ -211,3 +211,46 @@ class SubscribeLogCreate(SubscribeLogBase):
 class SubscribeLog(SubscribeLogBase):
     class Config:
         from_attributes = True
+
+# dialogue 모델
+class DialogueBase(BaseModel):
+    dialogue_id : int
+    title: str
+
+class DialogueCreate(DialogueBase):
+    pass
+
+class Dialogue(DialogueBase):
+    class Config:
+        from_attributes = True
+
+class DialogueScriptBase(BaseModel):
+    script_id:str
+    dialogue_id: int
+    sequence: int
+    script_ai: str
+    script_user: str
+
+class DialogueScriptCreate(DialogueBase):
+    pass
+
+class DialougeScript(DialogueScriptBase):
+    class Config:
+        from_attribute = True
+
+class DialogueVideoBase(BaseModel):
+    video_id:str
+    dialogue_id: int
+    sequence: int
+    video_data: bytes
+    video_type: str
+
+
+class DialogueVideoCreate(DialogueVideoBase):
+    pass
+
+class DialogueVideo(DialogueVideoBase):
+    class Config:
+        from_attribute = True
+
+

@@ -5,7 +5,6 @@ import random
 import models, schemas
 from datetime import timedelta
 
-
 # 비밀번호 해시 설정
 # pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -287,8 +286,7 @@ def get_random_voca_pair(db: Session):
     random_id = random_id = random.randint(1, voca_count)
     return db.query(models.VocaPair).filter(models.VocaPair.voca_id == random_id).first()
 
-from sqlalchemy.orm import Session
-import models, schemas
+
 
 def create_or_ignore_answer_log(db: Session, answer_log: schemas.AnswerLogCreate):
     # 특정 user_id와 voca_id가 이미 존재하는지 확인
@@ -338,7 +336,7 @@ def get_subject(db: Session, subject_id: int):
 
 
 def get_subjects(db: Session, subject_id: int):
-    return db.query(models.Subject).filter(models.Subject.subject_id == subject_id)
+    return db.query(models.Subject).filter(models.Subject.subject_id == subject_id).all()
 
 
 def delete_subject(db: Session, subject_id: int):
@@ -404,3 +402,47 @@ def delete_chatMessage(db: Session, msg_id: int):
         db.delete(db_message)
         db.commit()
     return db_message
+
+
+### Dialogue
+# dialogue 생성
+def create_dialogue(db: Session, dialogue: schemas.DialogueCreate):
+    dialogue = models.Dialogue(
+        dialogue_id=dialogue.dialogue_id,
+        title=dialogue.title
+    )
+    db.add(dialogue)
+    db.commit()
+    db.refresh(dialogue)
+    return dialogue
+
+def create_dialogue_script(db: Session, dialogue_script: schemas.DialogueScriptCreate):
+    dialogue_script = models.DialogueScript(
+        script_id=dialogue_script.script_id,
+        dialogue_id=dialogue_script.dialogue_id,
+        sequence=dialogue_script.sequence,
+        script_ai=dialogue_script.script_ai,
+        script_user=dialogue_script.script_user
+    )
+    db.add(dialogue_script)
+    db.commit()
+    db.refresh(dialogue_script)
+    return dialogue_script
+
+def create_dialogue_video(db: Session, dialogue_video: schemas.DialogueVideoCreate):  # = 대신 : 사용
+    dialogue_video = models.DialogueVideo(
+        video_id=dialogue_video.video_id,
+        dialogue_id=dialogue_video.dialogue_id,
+        video_data=dialogue_video.video_data,
+        video_type=dialogue_video.video_type
+    )
+    db.add(dialogue_video)
+    db.commit()
+    db.refresh(dialogue_video)
+    return dialogue_video
+
+def get_dialogues_video(db: Session, dialogue_id : int, sequence: int):
+    return db.query(models.DialogueVideo).filter(models.DialogueVideo.dialogue_id == dialogue_id, models.DialogueVideo.sequence == sequence).first()
+
+def get_dialogues_script(db: Session, dialogue_id : int, sequence: int):
+    return db.query(models.DialogueScript).filter(models.DialogueScript.dialogue_id == dialogue_id, models.DialogueScript.sequence == sequence).first()
