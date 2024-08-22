@@ -2,3 +2,4 @@ config.py
 .venv/
 insert_data.py
 temp.py
+temp_data.py

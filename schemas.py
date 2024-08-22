@@ -4,7 +4,7 @@ from datetime import datetime
 
 # User 모델
 class UserBase(BaseModel):
-    name: str
+    account_id: str
     pwd: str
     first_name: str
     last_name: str

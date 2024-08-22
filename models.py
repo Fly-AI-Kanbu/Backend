@@ -13,7 +13,6 @@ class User(Base):
     first_name = Column(String(20), nullable=False)
     last_name = Column(String(20), nullable=False)
     age = Column(Integer, nullable=False)
-    nickname = Column(String(20), nullable=True)
     email = Column(String(30), nullable=False)
     phone = Column(String(30), nullable=False)
     address = Column(String(60), nullable=False)

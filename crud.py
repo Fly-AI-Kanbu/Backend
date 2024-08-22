@@ -4,6 +4,7 @@ from typing import List
 import random
 import models, schemas
 from datetime import timedelta
+from sqlalchemy import func, and_
 
 
 # 비밀번호 해시 설정
@@ -13,7 +14,7 @@ from datetime import timedelta
 def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = "sss"  # pwd_context.hash(user.password)  # 비밀번호 해시 생성
     db_user = models.User(
-        name=user.name,
+        account_id=user.account_id,
         pwd=hashed_password,  # 실제 비밀번호 해시를 저장
         first_name=user.first_name,
         last_name=user.last_name,
@@ -34,12 +35,16 @@ def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.user_id == user_id).first()
 
 
-def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email == email).first()
+def get_user_by_account_id(db: Session, name: str): # 유저 중복 확인
+    return db.query(models.User).filter(models.User.name == name).first()
 
 
-def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.User).offset(skip).limit(limit).all()
+def get_users(db: Session, skip: int = 0, limit: int = None):
+    query = db.query(models.User).offset(skip)
+
+    if limit is not None:
+        query = query.limit(limit)
+    return query.all()
 
 
 def update_user(db: Session, user_id: int, updated_user: schemas.UserCreate):
@@ -154,16 +159,16 @@ def delete_country(db: Session, country_id: int):
 
 from datetime import datetime
 
-def create_attendance(db: Session, attend: schemas.AttendanceCreate):
+def create_attendance(db: Session, user_id: int):
     # attendance_date가 제공되지 않았을 경우 현재 시간을 기본값으로 설정
-    db_attend = models.Attendance(
-        user_id=attend.user_id,
-        attendance_date=attend.attendance_date,
+    attendance_log = models.Attendance(
+        user_id=user_id,
+        attendance_date=datetime.now().date()
     )
-    db.add(db_attend)
+    db.add(attendance_log)
     db.commit()
-    db.refresh(db_attend)
-    return db_attend
+    db.refresh(attendance_log)
+    return attendance_log
 
 
 def get_attendance(db: Session, user_id: int):
@@ -171,16 +176,37 @@ def get_attendance(db: Session, user_id: int):
     return [schemas.Attendance.from_orm(attendance) for attendance in attendances]
 
 
-def get_recent_attendances(db: Session, user_id: int):
-    # 최근 10개의 출석 데이터를 가져옴
-    attendances = (
-        db.query(models.Attendance)
-        .filter(models.Attendance.user_id == user_id)
-        .order_by(models.Attendance.attendance_date.desc())  # 날짜 기준으로 내림차순 정렬
-        .limit(10)  # 최근 10개만 가져옴
-        .all()
-    )
-    return [schemas.Attendance.from_orm(attendance) for attendance in attendances]
+from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
+from sqlalchemy import and_
+
+def get_attendances_of_the_week(db: Session, user_id: int):
+    attendances_of_the_week = {  # 주간 출석 db 조회
+        0: False,  # "Mon"
+        1: False,  # "Tue"
+        2: False,  # "Wed"
+        3: False,  # "Thu"
+        4: False,  # "Fri"
+        5: False,  # "Sat"
+        6: False   # "Sun"
+    } 
+
+    today = datetime.now().date()
+
+    for i in range(today.weekday() + 1):
+        check_date = today - timedelta(days=i)  # 오타 수정
+        data_exists = db.query(models.Attendance).filter(
+            and_(
+                models.Attendance.attendance_date == check_date,
+                models.Attendance.user_id == user_id
+            )
+        ).first() is not None
+
+        if data_exists:
+            attendances_of_the_week[check_date.weekday()] = True  # check_date.weekday()
+
+    return attendances_of_the_week
+
 
 
 def update_attendance(db: Session, user_id: int, updated_attend: schemas.AttendanceCreate):
@@ -203,21 +229,21 @@ def delete_attendance(db: Session, user_id: int):
 def get_consecutive_attendance(db: Session, user_id: int):
     return db.query(models.ConsecutiveAttendance).filter(models.ConsecutiveAttendance.user_id == user_id).first()
 
-def update_consecutive_attendance(db: Session, attendance_data: schemas.ConsecutiveAttendanceCreate):
-    db_attendance = get_consecutive_attendance(db, attendance_data.user_id)
-    
-    if db_attendance:
+def update_consecutive_attendance(db: Session, user_id: int):
+    user_consecutive_attendance = get_consecutive_attendance(db, attendance_data.user_id)
+    today = datetime.now().date()
+    if user_consecutive_attendance:
         # 연속 출석 여부를 판단
-        if db_attendance.last_attendance_date == (attendance_data.last_attendance_date - timedelta(days=1)).date():
-            db_attendance.consecutive_days += 1
-        elif db_attendance.last_attendance_date == attendance_data.last_attendance_date.date():
+        if user_consecutive_attendance.last_attendance_date == (today - timedelta(days=1)).date():
+            user_consecutive_attendance.consecutive_days += 1
+        elif user_consecutive_attendance.last_attendance_date == today:
             pass
         else:
-            db_attendance.consecutive_days = 1
+            user_consecutive_attendance.consecutive_days = 1
         
-        db_attendance.last_attendance_date = attendance_data.last_attendance_date
+        user_consecutive_attendance.last_attendance_date = today
         db.commit()
-        db.refresh(db_attendance)
+        db.refresh(user_consecutive_attendance)
     else:
         # 새로운 출석 기록 생성
         new_attendance = models.ConsecutiveAttendance(**attendance_data.dict())
@@ -282,13 +308,12 @@ def delete_quiz(db: Session, voca_id: int):
     return db_quiz
 
 # 메인페이지 단어
-def get_random_voca_pair(db: Session):
+def get_voca_pair(db: Session, index: int | None):
     voca_count = db.query(models.VocaPair).count()
-    random_id = random_id = random.randint(1, voca_count)
-    return db.query(models.VocaPair).filter(models.VocaPair.voca_id == random_id).first()
-
-from sqlalchemy.orm import Session
-import models, schemas
+    if not index:
+        voca_id = random.randint(1, voca_count)
+    
+    return db.query(models.VocaPair).filter(models.VocaPair.voca_id == voca_id).first()
 
 def create_or_ignore_answer_log(db: Session, answer_log: schemas.AnswerLogCreate):
     # 특정 user_id와 voca_id가 이미 존재하는지 확인
@@ -336,9 +361,8 @@ def create_subject(db: Session, subject: schemas.SubjectCreate):
 def get_subject(db: Session, subject_id: int):
     return db.query(models.Subject).filter(models.Subject.subject_id == subject_id).first()
 
-
-def get_subjects(db: Session, subject_id: int):
-    return db.query(models.Subject).filter(models.Subject.subject_id == subject_id)
+def get_random_subject(db: Session):
+    return db.query(models.Subject).order_by(func.rand()).first()
 
 
 def delete_subject(db: Session, subject_id: int):
@@ -348,10 +372,22 @@ def delete_subject(db: Session, subject_id: int):
         db.commit()
     return db_subject
 
-
+# 채팅 id로 subject title 받아오기
+def get_chats_with_titles(db: Session, user_id: int):
+    result = db.query(
+        models.Chat.chat_id, 
+        models.Subject.subject_name
+    ).join(
+        models.Subject, 
+        models.Chat.subject_id == models.Subject.subject_id
+    ).filter(
+        models.Chat.user_id == user_id
+    ).all()
+    
+    return result
 ##############################################################################################################
 # 채팅 DB
-def create_ (db: Session, chat: schemas.ChatCreate):
+def create_chat(db: Session, chat: schemas.ChatCreate):
     db_chatInfo = models.Chat(
         chat_id=chat.chat_id,
         user_id =chat.user_id,
@@ -379,13 +415,13 @@ def create_chatMessage(db: Session, chatMessage: schemas.ChatMessageCreate):
 
 
 #채팅방 정보
-def get_chat(db: Session, user_id: int):
-    return db.query(models.Chat).filter(models.Chat.user_id == user_id).all()
+def get_chat_list(db: Session, user_id: int):
+    return db.query(models.Chat).filter(models.Chat.user_id == user_id).order_by(models.Chat.created_time).all()
 
 
-#채팅방 별 로그 정보
+#채팅방 별 메시지 정보
 def get_chatLog(db: Session, chat_id: int):
-    return db.query(models.ChatMessage).filter(models.ChatMessage.chat_id == chat_id)
+    return db.query(models.ChatMessage).filter(models.ChatMessage.chat_id == chat_id).order_by(models.ChatMessage.created_time).all()
 
 
 #채팅 방 삭제

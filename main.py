@@ -136,7 +136,7 @@ def get_country_api(country_id: int, db: Session = Depends(get_db)):
     if not country:
         raise HTTPException(status_code=404, detail="Country not found")
     return country
-
+    
 @app.get("/countries/{country_id}/image", response_model=schemas.CountryImage)
 async def get_country_image_api(country_id: int, db: Session = Depends(get_db)):
     country_image = crud.get_country_image(db=db, country_id=country_id)
@@ -241,6 +241,7 @@ def create_chat_room(user_id: int, subject_id: int, db: Session = Depends(get_db
     db.refresh(new_chat_room)
 
     return new_chat_room
+
 
 @app.post("/chatrooms/chatmessages/")
 async def create_message(chat_msg : schemas.ChatMessageCreate, db : Session = Depends(get_db)):
