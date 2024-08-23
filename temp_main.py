@@ -115,12 +115,12 @@ def create_chat(user_id : int, db: Session = Depends(get_db)):
     # 받아온 답변을 chat_message db에 저장
     return new_chat
 
-# 채팅 메시지 입력, DB랑 AI 모델로 전송
+# 채팅 메시지 입력, DB랑 Chatbot으로 전송
 @app.post("/user/{chat_id}/create_chat_message")
 def create_chat_message(user_id: int, db: Session = Depends(get_db)):
     chat_id = 1 # 구현 확인을 위한 임시 data, 추후 업데이트 예정
-    new_chat_message = crud.create_chatMessage(db = db)
-    # request 
+    new_chat_message = crud.create_chatMessage(db = db) # db에 저장
+    # request ------------------------ Chatbot으로 전달 구현필요
 
 # 채팅방 list 조회
 @app.get("/user/{user_id}/get-chat-list")
@@ -136,4 +136,52 @@ def get_chat_messages(chat_id: str, db: Session = Depends(get_db)):
     chat_messages = crud.get_chatLog(db = db, chat_id = chat_id)
     return [{"is_human" : chat_message.is_human, "content" : chat_message.content} for chat_message in chat_messages]
 
+# 대화 끝났을 경우 분류 모델로 전송 및 점수 업데이트
+@app.put("/chat/{chat_id}/finish-chat")
+def finish_chat_message(chat_id: str, db: Session = Depends(get_db)):
+    chat_id = "chat123" # 구현 확인을 위한 임시 data, 추후 업데이트 예정
+    chat_message_log = crud.get_chatLog(db = db, chat_id = chat_id)
+    if not chat_message_log:
+        raise HTTPException(status_code=404, detail="No chat message found for this chat_id.")
+    user_id = db.query(models.Chat).filter(models.ChatMessage.chat_id == chat_id).first().user_id
+    user_id = 1 # 구현 확인을 위한 임시 data, 추후 업데이트 예정
+    user_chat_log_len = len(crud.get_chat_list(db = db, user_id = user_id)) # 유저의 현재까지 채팅 횟수
+    user_previous_ability = crud.get_korean(db = db, user_id = user_id) # 유저의 현재 점수 조회
+    # is_human이 False인 메시지와 True인 메시지로 구분
+    model_logs = [log for log in chat_message_log if not log.is_human]
+    user_logs = [log for log in chat_message_log if log.is_human]
+
+    results = []
+    for i in range(len(user_logs)):
+        model1_msg = model_logs[i]
+        user_msg = user_logs[i]
+        model2_msg = model_logs[i + 1]
+
+        # 그룹화하여 TextInput으로 변환
+        text_input = {
+            "model1" : model1_msg.content,
+            "user" : user_msg.content,
+            "model2" : model2_msg.content,
+        }
+        results.append(text_input)
+    # request to AI 모델 -------------------구현 필요
+    # 점수 결과를 new_score 변수로 받아왔다고 가정,
+    new_score = {   # 임시 데이터
+        "Delivery_score" : 50,
+        "Toxicity_score" : 30,
+        "cos_sim_question" : 70,
+        "cos_sim_answer" : 80,
+        "mlum_score" : 40,
+        } 
+    # 이전 채팅 로그와 비교 후 업데이트
+    updated_korean = user_previous_ability # 업데이트 정보를 전달받을 변수 생성
+    updated_korean.complexity = (user_previous_ability.complexity * user_chat_log_len + new_score['Delivery_score']) // (user_chat_log_len + 1) # 실제 구현 시 new_score 점수 부분 변경 필요
+    updated_korean.toxicity = (user_previous_ability.toxicity * user_chat_log_len + new_score['Toxicity_score']) // (user_chat_log_len + 1) # 실제 구현 시 new_score 점수 부분 변경 필요
+    updated_korean.fluency = (user_previous_ability.fluency * user_chat_log_len + new_score['mlum_score']) // (user_chat_log_len + 1) # 실제 구현 시 new_score 점수 부분 변경 필요
+    updated_korean.accuracy = (user_previous_ability.accuracy * user_chat_log_len + new_score['cos_sim_answer']) // (user_chat_log_len + 1) # 실제 구현 시 new_score 점수 부분 변경 필요
+    updated_korean.context_score = (user_previous_ability.context_score * user_chat_log_len + new_score['cos_sim_question']) // (user_chat_log_len + 1) # 실제 구현 시 new_score 점수 부분 변경 필요
+
+    
+    updated_score = crud.update_korean(db = db, user_id = user_id, updated_korean = updated_korean)
+    return updated_score
     

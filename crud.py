@@ -76,7 +76,8 @@ def create_korean(db: Session, korean: schemas.KoreanAbilityCreate):
         toxicity=korean.toxicity,
         fluency=korean.fluency,
         vocabulary=korean.vocabulary,
-        similarity=korean.similarity
+        accuracy=korean.accuracy,
+        context_score=korean.context_score 
     )
     db.add(db_korean)
     db.commit()
@@ -91,8 +92,9 @@ def get_korean(db: Session, user_id: int):
 
 def update_korean(db: Session, user_id: int, updated_korean: schemas.KoreanAbilityBase):
     korean = db.query(models.KoreanAbility).filter(models.KoreanAbility.user_id == user_id).first()
-    for key, value in updated_korean.model_dump().items():
-        setattr(korean, key, value)
+    for key, value in updated_korean.__dict__.items():
+        if key != "_sa_instance_state":  # SQLAlchemy 내부 속성은 제외
+            setattr(korean, key, value)
     db.commit()
     db.refresh(korean)
     return korean
@@ -230,11 +232,11 @@ def get_consecutive_attendance(db: Session, user_id: int):
     return db.query(models.ConsecutiveAttendance).filter(models.ConsecutiveAttendance.user_id == user_id).first()
 
 def update_consecutive_attendance(db: Session, user_id: int):
-    user_consecutive_attendance = get_consecutive_attendance(db, attendance_data.user_id)
+    user_consecutive_attendance = get_consecutive_attendance(db, user_id)
     today = datetime.now().date()
     if user_consecutive_attendance:
         # 연속 출석 여부를 판단
-        if user_consecutive_attendance.last_attendance_date == (today - timedelta(days=1)).date():
+        if user_consecutive_attendance.last_attendance_date == today - timedelta(days=1):
             user_consecutive_attendance.consecutive_days += 1
         elif user_consecutive_attendance.last_attendance_date == today:
             pass
@@ -244,15 +246,19 @@ def update_consecutive_attendance(db: Session, user_id: int):
         user_consecutive_attendance.last_attendance_date = today
         db.commit()
         db.refresh(user_consecutive_attendance)
-    else:
+    else:   
         # 새로운 출석 기록 생성
-        new_attendance = models.ConsecutiveAttendance(**attendance_data.dict())
+        new_attendance = models.ConsecutiveAttendance(
+            user_id = user_id,
+            last_attendance_date = today,
+            consecutive_days = 1
+        )
         db.add(new_attendance)
         db.commit()
         db.refresh(new_attendance)
-        db_attendance = new_attendance
+        user_consecutive_attendance = new_attendance
     
-    return db_attendance
+    return user_consecutive_attendance
 ##################################################################################################
 #단어 DB(quiz)
 

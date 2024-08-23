@@ -33,12 +33,14 @@ class KoreanAbility(Base):
     __tablename__ = 'korean_ability'
 
     ability_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)  
     complexity = Column(Integer, nullable=False)
     toxicity = Column(Integer, nullable=False)
     fluency = Column(Integer, nullable=False)
     vocabulary = Column(Integer, nullable=False)
-    similarity = Column(Integer, nullable=False)
+    accuracy = Column(Integer, nullable=False)
+    context_score = Column(Integer, nullable = False)
+
 
     user = relationship("User", back_populates="korean_abilities")
 

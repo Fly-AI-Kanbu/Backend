@@ -75,7 +75,8 @@ class KoreanAbilityBase(BaseModel):
     toxicity: int = 0
     fluency: int = 0
     vocabulary: int = 0
-    similarity: int = 0
+    accuracy: int = 0
+    context_score: int = 0
 
 class KoreanAbilityCreate(KoreanAbilityBase):
     user_id: int
