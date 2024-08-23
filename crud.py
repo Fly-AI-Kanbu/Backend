@@ -331,6 +331,29 @@ def get_random_voca_pairs(db: Session, num_pairs: int = 5):
     
     return [{"Eng": voca_pair.Eng, "Korean": voca_pair.Korean} for voca_pair in voca_pairs]
 
+
+def get_quiz_list(db: Session, num_quizzes: int):
+    total_words_needed = num_quizzes * 4
+    voca_pairs = db.query(models.VocaPair).order_by(func.random()).limit(total_words_needed).all()
+
+    quizs = []
+    for i in range(num_quizzes):
+        selected_words = voca_pairs[i * 4:(i + 1) * 4]
+        korean_word = random.choice(selected_words)
+        english_words = [voca.Eng for voca in selected_words]
+        
+        # 셔플하여 정답의 위치를 랜덤하게 배치
+        random.shuffle(english_words)
+        
+        quiz = {
+            "voca_id": korean_word.voca_id,
+            "korean": korean_word.Korean,
+            "options": english_words,
+        }
+        quizs.append(quiz)
+
+    return quizs
+
 def create_or_ignore_answer_log(db: Session, answer_log: schemas.AnswerLogCreate):
     # 특정 user_id와 voca_id가 이미 존재하는지 확인
     existing_logs = db.query(models.AnswerLog).filter(

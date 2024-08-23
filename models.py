@@ -60,7 +60,7 @@ class VocaPair(Base):
     __tablename__ = 'voca_pair'
 
     voca_id = Column(Integer, primary_key=True, autoincrement=True)
-    Korean = Column(String(10), nullable=False)
+    Korean = Column(String(60), nullable=False)
     Eng = Column(String(60), nullable=False)
 
 class ChatMessage(Base):

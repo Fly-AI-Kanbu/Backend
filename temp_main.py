@@ -187,7 +187,15 @@ def finish_chat_message(chat_id: str, db: Session = Depends(get_db)):
     
 
 ############# 단어 ###############    
+# 메인 화면 voca 받아오기
 @app.get("/voca_pair")
 def get_voca_for_main(db: Session = Depends(get_db)):
     voca_pair = crud.get_random_voca_pairs(db)
     return voca_pair
+
+# 단어 퀴즈 받아오기
+@app.get("/quiz-list")
+def get_quiz(db: Session = Depends(get_db)):
+    num_quiz = 20
+    quizs = crud.get_quiz_list(db, num_quiz)
+    return quizs
