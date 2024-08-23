@@ -185,3 +185,9 @@ def finish_chat_message(chat_id: str, db: Session = Depends(get_db)):
     updated_score = crud.update_korean(db = db, user_id = user_id, updated_korean = updated_korean)
     return updated_score
     
+
+############# 단어 ###############    
+@app.get("/voca_pair")
+def get_voca_for_main(db: Session = Depends(get_db)):
+    voca_pair = crud.get_random_voca_pairs(db)
+    return voca_pair

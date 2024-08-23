@@ -3,3 +3,4 @@ config.py
 insert_data.py
 temp.py
 temp_data.py
+__pycache__/

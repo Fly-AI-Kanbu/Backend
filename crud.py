@@ -321,6 +321,16 @@ def get_voca_pair(db: Session, index: int | None):
     
     return db.query(models.VocaPair).filter(models.VocaPair.voca_id == voca_id).first()
 
+def get_random_voca_pairs(db: Session, num_pairs: int = 5):
+    voca_count = db.query(models.VocaPair).count()
+    
+    # 랜덤하게 num_pairs개의 ID를 뽑아오기
+    random_ids = random.sample(range(1, voca_count + 1), num_pairs)
+    voca_pairs = db.query(models.VocaPair).filter(models.VocaPair.voca_id.in_(random_ids)).all()
+    # 해당 ID들의 단어를 쿼리하여 가져오기
+    
+    return [{"Eng": voca_pair.Eng, "Korean": voca_pair.Korean} for voca_pair in voca_pairs]
+
 def create_or_ignore_answer_log(db: Session, answer_log: schemas.AnswerLogCreate):
     # 특정 user_id와 voca_id가 이미 존재하는지 확인
     existing_logs = db.query(models.AnswerLog).filter(
