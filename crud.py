@@ -5,8 +5,9 @@ import random
 import models, schemas
 from datetime import timedelta
 from sqlalchemy import func, and_
-
-
+import uuid
+from fastapi import HTTPException
+from sqlalchemy import desc,asc
 # 비밀번호 해시 설정
 # pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -77,7 +78,7 @@ def create_korean(db: Session, korean: schemas.KoreanAbilityCreate):
         fluency=korean.fluency,
         vocabulary=korean.vocabulary,
         accuracy=korean.accuracy,
-        context_score=korean.context_score 
+        context_score=korean.context_score
     )
     db.add(db_korean)
     db.commit()
@@ -87,14 +88,21 @@ def create_korean(db: Session, korean: schemas.KoreanAbilityCreate):
 
 
 def get_korean(db: Session, user_id: int):
-    return db.query(models.KoreanAbility).filter(models.KoreanAbility.user_id == user_id).first()
-
+    koability = db.query(models.KoreanAbility).filter(models.KoreanAbility.user_id == user_id).first()
+    korean ={
+        'complexity':koability.complexity,
+        'toxicity':koability.toxicity,
+        'fluency':koability.fluency,
+        'vocabulary':koability.vocabulary,
+        'accuracy':koability.accuracy,
+        'context_score' : koability.context_score
+        }
+    return korean
 
 def update_korean(db: Session, user_id: int, updated_korean: schemas.KoreanAbilityBase):
     korean = db.query(models.KoreanAbility).filter(models.KoreanAbility.user_id == user_id).first()
-    for key, value in updated_korean.__dict__.items():
-        if key != "_sa_instance_state":  # SQLAlchemy 내부 속성은 제외
-            setattr(korean, key, value)
+    for key, value in updated_korean.model_dump().items():
+        setattr(korean, key, value)
     db.commit()
     db.refresh(korean)
     return korean
@@ -236,7 +244,7 @@ def update_consecutive_attendance(db: Session, user_id: int):
     today = datetime.now().date()
     if user_consecutive_attendance:
         # 연속 출석 여부를 판단
-        if user_consecutive_attendance.last_attendance_date == today - timedelta(days=1):
+        if user_consecutive_attendance.last_attendance_date == (today - timedelta(days=1)).date():
             user_consecutive_attendance.consecutive_days += 1
         elif user_consecutive_attendance.last_attendance_date == today:
             pass
@@ -246,19 +254,15 @@ def update_consecutive_attendance(db: Session, user_id: int):
         user_consecutive_attendance.last_attendance_date = today
         db.commit()
         db.refresh(user_consecutive_attendance)
-    else:   
+    else:
         # 새로운 출석 기록 생성
-        new_attendance = models.ConsecutiveAttendance(
-            user_id = user_id,
-            last_attendance_date = today,
-            consecutive_days = 1
-        )
+        new_attendance = models.ConsecutiveAttendance(**attendance_data.dict())
         db.add(new_attendance)
         db.commit()
         db.refresh(new_attendance)
-        user_consecutive_attendance = new_attendance
+        db_attendance = new_attendance
     
-    return user_consecutive_attendance
+    return db_attendance
 ##################################################################################################
 #단어 DB(quiz)
 
@@ -321,39 +325,6 @@ def get_voca_pair(db: Session, index: int | None):
     
     return db.query(models.VocaPair).filter(models.VocaPair.voca_id == voca_id).first()
 
-def get_random_voca_pairs(db: Session, num_pairs: int = 5):
-    voca_count = db.query(models.VocaPair).count()
-    
-    # 랜덤하게 num_pairs개의 ID를 뽑아오기
-    random_ids = random.sample(range(1, voca_count + 1), num_pairs)
-    voca_pairs = db.query(models.VocaPair).filter(models.VocaPair.voca_id.in_(random_ids)).all()
-    # 해당 ID들의 단어를 쿼리하여 가져오기
-    
-    return [{"Eng": voca_pair.Eng, "Korean": voca_pair.Korean} for voca_pair in voca_pairs]
-
-
-def get_quiz_list(db: Session, num_quizzes: int):
-    total_words_needed = num_quizzes * 4
-    voca_pairs = db.query(models.VocaPair).order_by(func.random()).limit(total_words_needed).all()
-
-    quizs = []
-    for i in range(num_quizzes):
-        selected_words = voca_pairs[i * 4:(i + 1) * 4]
-        korean_word = random.choice(selected_words)
-        english_words = [voca.Eng for voca in selected_words]
-        
-        # 셔플하여 정답의 위치를 랜덤하게 배치
-        random.shuffle(english_words)
-        
-        quiz = {
-            "voca_id": korean_word.voca_id,
-            "korean": korean_word.Korean,
-            "options": english_words,
-        }
-        quizs.append(quiz)
-
-    return quizs
-
 def create_or_ignore_answer_log(db: Session, answer_log: schemas.AnswerLogCreate):
     # 특정 user_id와 voca_id가 이미 존재하는지 확인
     existing_logs = db.query(models.AnswerLog).filter(
@@ -415,28 +386,49 @@ def delete_subject(db: Session, subject_id: int):
 def get_chats_with_titles(db: Session, user_id: int):
     result = db.query(
         models.Chat.chat_id, 
-        models.Subject.subject_name
+        models.Subject.subject_name,
+        models.Chat.created_time
     ).join(
         models.Subject, 
         models.Chat.subject_id == models.Subject.subject_id
     ).filter(
         models.Chat.user_id == user_id
+    ).order_by(
+        models.Chat.created_time.desc()  # 내림차순 정렬 (최신 항목이 위로 가도록 정렬)
     ).all()
     
     return result
+
+
 ##############################################################################################################
 # 채팅 DB
-def create_chat(db: Session, chat: schemas.ChatCreate):
-    db_chatInfo = models.Chat(
-        chat_id=chat.chat_id,
-        user_id =chat.user_id,
-        subject_id=chat.subject_id,
-        created_time=chat.created_time
+def get_chat_id() -> str:
+    # UUID를 기반으로 20자리 랜덤 문자열 생성
+    return str(uuid.uuid4())[:20]
+def create_chat(db: Session, user_id: int, subject_id: int):
+    # Chat ID 생성
+    chat_id = get_chat_id()
+
+    # 새로운 채팅 생성
+    new_chat = models.Chat(
+        chat_id=chat_id,
+        user_id=user_id,
+        subject_id=subject_id,
+        created_time=datetime.now()  # created_time 필드 추가
     )
-    db.add(db_chatInfo)
-    db.commit()
-    db.refresh(db_chatInfo)
-    return db_chatInfo
+
+    try:
+        # 데이터베이스에 저장
+        db.add(new_chat)
+        db.commit()
+        db.refresh(new_chat)
+    except Exception as e:
+        print(f"Error : {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Chat creation failed")
+
+    # 반환할 때 Pydantic 모델로 변환
+    return schemas.Chat.from_orm(new_chat)
 
 
 def create_chatMessage(db: Session, chatMessage: schemas.ChatMessageCreate):
@@ -460,8 +452,7 @@ def get_chat_list(db: Session, user_id: int):
 
 #채팅방 별 메시지 정보
 def get_chatLog(db: Session, chat_id: int):
-    return db.query(models.ChatMessage).filter(models.ChatMessage.chat_id == chat_id).order_by(models.ChatMessage.created_time).all()
-
+    return db.query(models.ChatMessage).filter(models.ChatMessage.chat_id == chat_id).order_by(asc(models.ChatMessage.created_time)).all()
 
 #채팅 방 삭제
 def delete_chatroom(db: Session, chat_id: int):
@@ -479,3 +470,84 @@ def delete_chatMessage(db: Session, msg_id: int):
         db.delete(db_message)
         db.commit()
     return db_message
+
+def get_quiz_list(db: Session, num_quizzes: int):
+    total_words_needed = num_quizzes * 4
+    voca_pairs = db.query(models.VocaPair).order_by(func.random()).limit(total_words_needed).all()
+
+    quizs = []
+    for i in range(num_quizzes):
+        selected_words = voca_pairs[i * 4:(i + 1) * 4]
+        korean_word = random.choice(selected_words)
+        english_words = [voca.Eng for voca in selected_words]
+        
+        # 셔플하여 정답의 위치를 랜덤하게 배치
+        random.shuffle(english_words)
+        
+        quiz = {
+            "voca_id": korean_word.voca_id,
+            "korean": korean_word.Korean,
+            "options": english_words,
+        }
+        quizs.append(quiz)
+
+    return quizs
+
+##퀴즈에서 단어를 클릭했을 경우 호출
+def get_quiz_answer(db: Session, user_id : int, voca_id: int, answer: str):
+    true_answer = db.query(models.VocaPair).filter(models.VocaPair.voca_id == voca_id).first()
+
+    if true_answer.Eng == answer:
+        existing_logs = db.query(models.AnswerLog).filter(
+        models.AnswerLog.user_id == user_id,
+        models.AnswerLog.voca_id == voca_id
+        ).all()
+
+        #맞춘 기록이 있는가?
+        is_answer_correct_logged = any(log.is_answer for log in existing_logs)
+
+        #기존에 is_answer가 True인 로그가 없는 경우에만 vocabulary에 1점 추가
+        if not is_answer_correct_logged:
+            # KoreanAbility 업데이트 (vocabulary에 1점 추가)
+            korean_ability = db.query(models.KoreanAbility).filter(
+                models.KoreanAbility.user_id == user_id
+            ).first()
+
+            if korean_ability:
+                korean_ability.vocabulary += 1
+                db.commit()
+                db.refresh(korean_ability)
+
+            log = models.AnswerLog(
+            log_id=uuid.uuid4(),
+            user_id=user_id,
+            voca_id=voca_id,
+            is_answer=True,
+            date=datetime.now()
+        )
+            create_AnswerLog(db=db, AnswerLog=log)
+        return True
+    else:
+        log = models.AnswerLog(
+            log_id=uuid.uuid4(),
+            user_id=user_id,
+            voca_id=voca_id,
+            is_answer=False,
+            date=datetime.now()
+        )
+        create_AnswerLog(db=db, AnswerLog=log)
+        return False
+    
+    
+def create_chatMessage(db: Session, chat_message: schemas.ChatMessage, chat_id: str, is_human: bool):
+    db_chatMessage = models.ChatMessage(
+        chat_id=chat_id,
+        msg_id=uuid.uuid4(),
+        content=chat_message.content,
+        created_time=datetime.now(),
+        is_human=is_human
+    )
+    db.add(db_chatMessage)
+    db.commit()
+    db.refresh(db_chatMessage)
+    return db_chatMessage

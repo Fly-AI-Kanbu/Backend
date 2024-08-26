@@ -8,7 +8,8 @@ password = config.mysql_password
 ip = config.mysql_ip
 db_name = config.mysql_db
 # MySQL 연결 설정
-SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{user}:{password}@{ip}/{db_name}"
+#SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{user}:{password}@{ip}/{db_name}"
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:1234@localhost:3306/kanbu"
 
 # SQLAlchemy 엔진 생성
 engine = create_engine(

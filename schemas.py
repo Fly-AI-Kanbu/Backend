@@ -94,8 +94,7 @@ class ChatBase(BaseModel):
     subject_id: int
     created_time: datetime
 
-class ChatCreate(ChatBase):
-    pass
+
 
 class Chat(ChatBase):
     class Config:
@@ -212,3 +211,25 @@ class SubscribeLogCreate(SubscribeLogBase):
 class SubscribeLog(SubscribeLogBase):
     class Config:
         from_attributes = True
+
+class QuizAnswerRequest(BaseModel):
+    user_id: int
+    voca_id: int
+    selected_answer: str
+
+# ChatMessage 모델
+class ChatMessageBase(BaseModel):
+    content: str
+
+class ChatMessageCreate(ChatMessageBase):
+    pass
+
+class ChatMessage(ChatMessageBase):
+    chat_id: str
+    is_human: bool
+    msg_id: str
+    created_time: datetime
+    class Config:
+        from_attributes = True
+
+        

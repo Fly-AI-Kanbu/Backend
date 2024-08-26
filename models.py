@@ -33,15 +33,13 @@ class KoreanAbility(Base):
     __tablename__ = 'korean_ability'
 
     ability_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)  
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
     complexity = Column(Integer, nullable=False)
     toxicity = Column(Integer, nullable=False)
     fluency = Column(Integer, nullable=False)
     vocabulary = Column(Integer, nullable=False)
     accuracy = Column(Integer, nullable=False)
-    context_score = Column(Integer, nullable = False)
-
-
+    context_score = Column(Integer, nullable=False)
     user = relationship("User", back_populates="korean_abilities")
 
 class Chat(Base):
@@ -60,7 +58,7 @@ class VocaPair(Base):
     __tablename__ = 'voca_pair'
 
     voca_id = Column(Integer, primary_key=True, autoincrement=True)
-    Korean = Column(String(60), nullable=False)
+    Korean = Column(String(50), nullable=False)
     Eng = Column(String(60), nullable=False)
 
 class ChatMessage(Base):
@@ -76,7 +74,7 @@ class ChatMessage(Base):
 class AnswerLog(Base):
     __tablename__ = 'log_quiz'
 
-    log_id = Column(String(10), primary_key=True)
+    log_id = Column(String(100), primary_key=True)
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
     voca_id = Column(Integer, nullable=False)
     is_answer = Column(Boolean, nullable=False)
