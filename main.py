@@ -1,8 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, UploadFile , File
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 import crud, schemas
 import models
+import io
 from typing import List
 from sqlalchemy import func
 import random
@@ -11,7 +12,7 @@ from database import SessionLocal, engine
 from uuid import uuid4
 from fastapi.middleware.cors import CORSMiddleware
 import requests
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import desc,asc
 # 데이터베이스 테이블 생성
 models.Base.metadata.create_all(bind=engine)
@@ -287,3 +288,73 @@ def finish_chat_message(chat_id: str, db: Session = Depends(get_db)):
             'fluency': updated_score.fluency
             }
     
+
+#####전화페이지######
+#전화 버튼이 있다면 눌러라
+@app.post("/call")
+def user_call(chat_id: str=None, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    url = 'http://localhost:597'  # AI 서버 주소
+    url2 = 'http://localhost:2937'
+    session_id = str(uuid4())
+
+    # STT 요청: 파일을 STT API로 전송
+    with file.file as audio_file:
+        stt_response = requests.post(
+            url + '/stt',
+            files={'file': (file.filename, audio_file, file.content_type)}
+        )
+
+    if stt_response.status_code != 200:
+        raise HTTPException(status_code=stt_response.status_code, detail="STT failed")
+
+    # STT 응답에서 텍스트 추출
+    user_message = stt_response.json().get('transcript')
+    if not user_message:
+        raise HTTPException(status_code=400, detail="No transcript found in STT response")
+
+    print(f"User message: {user_message}")
+    ## STT로 받은 텍스트를 DB에 저장 (사용자가 보낸 메시지로)
+    # crud.create_chatMessage(db=db, chat_message=user_message, chat_id=chat_id, is_human=True)
+
+    # GPT 모델에 텍스트를 전송하여 응답 받기
+    response = requests.post(
+        url2 + '/chat3',
+        json={"session_id": session_id, "message": user_message}  # Correct field names
+    )
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail="Chat model request failed")
+
+    bot_reply = response.json().get('reply')
+    if not bot_reply:
+        raise HTTPException(status_code=400, detail="No response from GPT model")
+
+    # GPT 응답에서 TTS로 변환할 텍스트 추출
+    input_tts = bot_reply.split('발음:')[0][4:]  # 혹은 필요한 텍스트 추출 방식 사용
+    print(f"GPT reply: {input_tts}")
+
+    ## GPT 모델의 응답을 DB에 저장 (모델이 보낸 메시지로)
+    # crud.create_chatMessage(db=db, chat_message=bot_reply, chat_id=chat_id, is_human=False)
+
+    # TTS 요청: GPT 모델의 응답을 음성으로 변환
+    speed = 1.0
+    voice = 'nova'
+    data = {
+        "input_text": input_tts,
+        "speed": speed,
+        "voice": voice
+    }
+
+    # TTS API 호출
+    tts_response = requests.post(url + '/tts', data=data)
+
+    if tts_response.status_code != 200:
+        raise HTTPException(status_code=tts_response.status_code, detail=f"TTS API failed: {tts_response.text}")
+
+    # TTS 응답을 메모리 스트림으로 변환하여 클라이언트에 전달
+    audio_stream = io.BytesIO(tts_response.content)
+    audio_stream.seek(0)
+
+    return StreamingResponse(audio_stream, media_type='audio/mpeg', headers={
+        "Content-Disposition": "attachment; filename=output.mp3"
+    })
