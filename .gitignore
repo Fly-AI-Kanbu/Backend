@@ -3,3 +3,6 @@ config.py
 insert_data.py
 temp.py
 temp_data.py
+.env
+temp_data.py
+temp_main.py

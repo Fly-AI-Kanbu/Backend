@@ -1,15 +1,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import config
+import os
+from dotenv import load_dotenv
 
-user = config.mysql_user
-password = config.mysql_password
-ip = config.mysql_ip
-db_name = config.mysql_db
+# .env 파일 로드
+load_dotenv()
+
 # MySQL 연결 설정
-#SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{user}:{password}@{ip}/{db_name}"
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:1234@localhost:3306/kanbu"
+SQLALCHEMY_DATABASE_URL = os.environ['SQLALCHEMY_DATABASE_URL']
 
 # SQLAlchemy 엔진 생성
 engine = create_engine(

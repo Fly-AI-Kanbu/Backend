@@ -15,12 +15,12 @@ from sqlalchemy import desc,asc
 def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = "sss"  # pwd_context.hash(user.password)  # 비밀번호 해시 생성
     db_user = models.User(
-        account_id=user.account_id,
+        user_id=user.user_id,
         pwd=hashed_password,  # 실제 비밀번호 해시를 저장
         first_name=user.first_name,
         last_name=user.last_name,
         age=user.age,
-        nickname=user.nickname,
+        name=user.name,
         email=user.email,
         phone=user.phone,
         address=user.address,
@@ -28,7 +28,9 @@ def create_user(db: Session, user: schemas.UserCreate):
     )
     db.add(db_user)
     db.commit()
+    print('adsfadfadf')
     db.refresh(db_user)
+    print('너야?')
     return db_user
 
 
@@ -239,30 +241,40 @@ def delete_attendance(db: Session, user_id: int):
 def get_consecutive_attendance(db: Session, user_id: int):
     return db.query(models.ConsecutiveAttendance).filter(models.ConsecutiveAttendance.user_id == user_id).first()
 
+from datetime import datetime, timedelta
+
 def update_consecutive_attendance(db: Session, user_id: int):
     user_consecutive_attendance = get_consecutive_attendance(db, user_id)
     today = datetime.now().date()
+    
     if user_consecutive_attendance:
         # 연속 출석 여부를 판단
-        if user_consecutive_attendance.last_attendance_date == (today - timedelta(days=1)).date():
+        if user_consecutive_attendance.last_attendance_date == (today - timedelta(days=1)):
             user_consecutive_attendance.consecutive_days += 1
         elif user_consecutive_attendance.last_attendance_date == today:
             pass
         else:
             user_consecutive_attendance.consecutive_days = 1
         
+        # 마지막 출석 날짜 업데이트
         user_consecutive_attendance.last_attendance_date = today
         db.commit()
         db.refresh(user_consecutive_attendance)
+        db_attendance = user_consecutive_attendance
     else:
         # 새로운 출석 기록 생성
-        new_attendance = models.ConsecutiveAttendance(**attendance_data.dict())
+        new_attendance = models.ConsecutiveAttendance(
+            user_id=user_id,
+            consecutive_days=1,
+            last_attendance_date=today
+        )
         db.add(new_attendance)
         db.commit()
         db.refresh(new_attendance)
         db_attendance = new_attendance
     
     return db_attendance
+
 ##################################################################################################
 #단어 DB(quiz)
 

@@ -4,17 +4,17 @@ from datetime import datetime
 
 # User 모델
 class UserBase(BaseModel):
-    account_id: str
+    user_id: int
     pwd: str
     first_name: str
     last_name: str
     age: int
-    nickname: Optional[str] = None
+    name: Optional[str] = None
     email: str
     phone: str
     address: str
     country_id: int
-
+    
 class UserCreate(UserBase):
     pass
 

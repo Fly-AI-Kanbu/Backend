@@ -49,7 +49,7 @@ def create_user_account(user: schemas.UserCreate, db: Session = Depends(get_db))
 
     # Attendance 생성 (기본값이 이미 CRUD에 설정되어 있음)
     attendance = schemas.AttendanceCreate(user_id=db_user.user_id)
-    crud.create_attendance(db=db, attend=attendance)
+    crud.create_attendance(db=db, user_id=db_user.user_id)
 
     return db_user
 
